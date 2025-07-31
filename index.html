@@ -1,0 +1,1254 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>payment-rappzie</title>
+    <link rel="icon" type="image/png" href="https://files.catbox.moe/2wqr9x.jpg">
+    <!-- Google Fonts for 'Press Start 2P' and 'Outfit' -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Outfit:wght@300;500;700&display=swap">
+    <!-- Font Awesome for social media icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        /* CSS Variables for consistent theming */
+        :root {
+            --primary: rgb(0, 180, 255);
+            --primary-light: rgb(100, 220, 255);
+            --secondary: rgb(255, 100, 150);
+            --accent: rgb(255, 220, 0);
+            --white: rgb(255, 255, 255);
+            --black: rgb(0, 0, 0);
+            --bg-gradient: linear-gradient(135deg, rgb(0, 120, 200) 0%, rgb(200, 240, 255) 100%);
+            --shadow: 0 8px 0 rgba(0, 0, 0, 0.2);
+            --pixel-border: 4px solid var(--black);
+        }
+        
+        /* Global Reset and Font Styling */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Press Start 2P', 'Outfit', 'Calibri', Arial, sans-serif;
+            image-rendering: pixelated; 
+        }
+        
+        body {
+            min-height: 100vh;
+            background: var(--bg-gradient);
+            color: var(--black);
+            overflow-x: hidden;
+            position: relative;
+        }
+        
+        /* Loader Styles */
+        .loader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: var(--bg-gradient);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            opacity: 1;
+            transition: opacity 0.8s, transform 0.8s;
+        }
+        
+        .loader.hidden {
+            opacity: 0;
+            transform: scale(1.1);
+            pointer-events: none;
+        }
+        
+        .welcome-title {
+            font-size: clamp(1rem, 5vw, 1.5rem);
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 22px;
+            letter-spacing: 1px;
+            text-shadow: 3px 3px 0 var(--black), 5px 5px 0 rgba(0, 0, 0, 0.2);
+            animation: pixelBounce 1.2s 0.2s both;
+        }
+        
+        .spinner {
+            width: clamp(80px, 20vw, 120px);
+            height: clamp(80px, 20vw, 120px);
+            position: relative;
+            animation: pixelBounce 1.2s infinite ease-in-out;
+        }
+        
+        .spinner::before {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect x="10" y="10" width="80" height="80" fill="none" stroke="%23000" stroke-width="8" stroke-linecap="square" stroke-linejoin="miter"><animateTransform attributeName="transform" type="rotate" from="0 50 50" to="360 50 50" dur="2s" repeatCount="indefinite"/></rect><rect x="20" y="20" width="60" height="60" fill="rgba(100,220,255,0.3)" stroke="%23000" stroke-width="4"/></svg>') no-repeat center;
+            background-size: contain;
+            animation: pixelPulse 1.2s infinite ease-in-out;
+        }
+        
+        .welcome-text {
+            margin-top: 22px;
+            font-size: clamp(0.8rem, 4vw, 1.2rem);
+            font-weight: 700;
+            color: var(--secondary);
+            text-shadow: 2px 2px 0 var(--black);
+            letter-spacing: 1px;
+            animation: pixelFadeIn 1.2s 0.5s both;
+        }
+        
+        /* Keyframe Animations */
+        @keyframes pixelBounce {
+            0%, 100% { transform: translateY(0) scale(1); }
+            50% { transform: translateY(-10px) scale(1.05); }
+        }
+        
+        @keyframes pixelPulse {
+            0%, 100% { transform: scale(0.95); opacity: 0.8; }
+            50% { transform: scale(1); opacity: 1; }
+        }
+        
+        @keyframes pixelFadeIn {
+            from { opacity: 0; transform: translateY(10px) scale(0.9); filter: blur(2px);}
+            to { opacity: 1; transform: translateY(0) scale(1); filter: blur(0);}
+        }
+        
+        /* Page Transition Styles */
+        .page {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            padding: 30px;
+            max-width: 500px;
+            width: 96vw;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 0;
+            border: var(--pixel-border);
+            box-shadow: var(--shadow);
+            opacity: 0;
+            transition: all 0.9s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+            z-index: 1;
+        }
+        
+        .page::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                linear-gradient(90deg, rgba(0,0,0,0.1) 1px, transparent 1px),
+                linear-gradient(rgba(0,0,0,0.1) 1px, transparent 1px);
+            background-size: 10px 10px;
+            pointer-events: none;
+            opacity: 0.3;
+        }
+        
+        .page.active {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+            animation: pixelPopIn 0.6s cubic-bezier(0.68, -0.55, 0.27, 1.55) forwards;
+        }
+        
+        .page.hidden {
+            opacity: 0;
+            transform: translate(-50%, -50%) scale(0.85);
+            pointer-events: none;
+            animation: pixelPopOut 0.6s cubic-bezier(0.68, -0.55, 0.27, 1.55) forwards;
+        }
+        
+        @keyframes pixelPopIn {
+            0% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); box-shadow: 0 0 0 rgba(0,0,0,0);}
+            50% { opacity: 1; transform: translate(-50%, -50%) scale(1.05);}
+            100% { opacity: 1; transform: translate(-50%, -50%) scale(1); box-shadow: var(--shadow);}
+        }
+        
+        @keyframes pixelPopOut {
+            0% { opacity: 1; transform: translate(-50%, -50%) scale(1);}
+            100% { opacity: 0; transform: translate(-50%, -50%) scale(0.8);}
+        }
+        
+        /* About Page Specific Styles */
+        #about h1 {
+            font-size: clamp(1.5rem, 6vw, 2.1rem);
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 18px;
+            letter-spacing: 1px;
+            text-shadow: 3px 3px 0 var(--black);
+            opacity: 0;
+            animation: pixelPopInSmooth 1.2s 0.5s forwards;
+        }
+        
+        #about .typing-animation {
+            display: inline-block;
+            font-size: clamp(0.9rem, 3.5vw, 1.1rem);
+            font-weight: 400;
+            white-space: nowrap;
+            overflow: hidden;
+            border-right: 4px solid var(--black);
+            width: 0;
+            opacity: 0;
+            animation: pixelTyping 2.5s steps(24, end) 1s forwards, pixelBlink 0.6s step-end infinite;
+        }
+        
+        @keyframes pixelTyping {
+            0% { width: 0; opacity: 0; }
+            100% { width: 24ch; opacity: 1; }
+        }
+        
+        @keyframes pixelBlink {
+            from { border-color: transparent; }
+            to { border-color: var(--black); }
+        }
+        
+        @keyframes pixelPopInSmooth {
+            0% { opacity: 0; transform: scale(0.6) translateY(-50px);}
+            70% { opacity: 1; transform: scale(1.1) translateY(10px);}
+            100% { opacity: 1; transform: scale(1) translateY(0);}
+        }
+        
+        #about .subtitle {
+            font-size: clamp(0.85rem, 3vw, 1.05rem);
+            color: var(--black);
+            margin: 18px 0 28px;
+            opacity: 0;
+            animation: pixelBounceIn 1.2s 1.5s forwards;
+        }
+        
+        @keyframes pixelBounceIn {
+            0% { opacity: 0; transform: translateY(60px);}
+            60% { opacity: 1; transform: translateY(-15px);}
+            80% { transform: translateY(5px);}
+            100% { opacity: 1; transform: translateY(0);}
+        }
+        
+        /* General Button Styles */
+        .btn {
+            display: inline-block;
+            padding: 12px 24px;
+            background: linear-gradient(90deg, var(--primary) 0%, var(--primary-light) 100%);
+            color: var(--white);
+            text-decoration: none;
+            border-radius: 0;
+            font-weight: 600;
+            border: var(--pixel-border);
+            font-size: clamp(0.9rem, 3.5vw, 1rem);
+            margin: 10px 0;
+            cursor: pointer;
+            box-shadow: 4px 4px 0 var(--black);
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+            letter-spacing: 0.5px;
+            text-shadow: 2px 2px 0 var(--black);
+        }
+        
+        .btn:hover {
+            background: linear-gradient(90deg, var(--secondary) 0%, var(--accent) 100%);
+            transform: translate(2px, 2px);
+            box-shadow: 2px 2px 0 var(--black);
+        }
+        
+        .btn:active {
+            transform: translate(4px, 4px);
+            box-shadow: 0 0 0 var(--black);
+        }
+        
+        /* Payment Page Specific Styles */
+        #payment {
+            overflow-y: auto;
+            padding: 20px;
+            max-width: 420px;
+            width: 95vw;
+            border: var(--pixel-border);
+            background: rgba(255, 255, 255, 0.95);
+        }
+        
+        #payment h1 {
+            font-size: clamp(1.2rem, 5vw, 1.5rem);
+            font-weight: 700;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 12px;
+            text-shadow: 3px 3px 0 var(--black);
+            animation: pixelPopInSmooth 1.2s forwards;
+        }
+        
+        #payment .subtitle {
+            font-size: clamp(0.8rem, 3vw, 1rem);
+            color: var(--black);
+            margin-bottom: 12px;
+            font-weight: 400;
+            opacity: 0;
+            animation: pixelBounceIn 1.2s 0.5s forwards;
+        }
+        
+        /* QR Frame and Image Styles */
+        .qr-frame {
+            position: relative;
+            display: inline-block;
+            padding: 12px;
+            background: rgba(100, 220, 255, 0.3);
+            border-radius: 0;
+            border: var(--pixel-border);
+            overflow: hidden;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 4px 4px 0 var(--black);
+            margin-bottom: 10px;
+        }
+        
+        .qr-frame:hover {
+            transform: translate(2px, 2px);
+            box-shadow: 2px 2px 0 var(--black);
+            background: rgba(255, 100, 150, 0.3);
+        }
+        
+        .qr-frame:active {
+            transform: translate(4px, 4px);
+            box-shadow: 0 0 0 var(--black);
+        }
+        
+        .qr-frame img {
+            width: clamp(120px, 40vw, 170px);
+            height: auto;
+            border-radius: 0;
+            border: var(--pixel-border);
+            transition: transform 0.2s ease;
+            image-rendering: pixelated;
+        }
+        
+        .qr-frame:hover img {
+            transform: scale(1.05);
+        }
+        
+        /* Payment Info Details Accordion */
+        .payment-info {
+            margin: 18px 0;
+            text-align: left;
+            max-width: 100%;
+            background: rgba(100, 220, 255, 0.2);
+            padding: 12px;
+            border-radius: 0;
+            border: var(--pixel-border);
+            box-shadow: 4px 4px 0 var(--black);
+        }
+        
+        details {
+            margin-bottom: 10px;
+            background: rgba(100, 220, 255, 0.3);
+            border-radius: 0;
+            border: var(--pixel-border);
+            padding: 8px;
+            transition: all 0.3s ease;
+            transform-origin: top;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 2px 2px 0 var(--black);
+        }
+        
+        details[open] {
+            background: rgba(255, 100, 150, 0.3);
+            box-shadow: 4px 4px 0 var(--black);
+        }
+        
+        summary {
+            font-weight: 600;
+            cursor: pointer;
+            padding: 8px;
+            outline: none;
+            color: var(--black);
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+            list-style: none;
+        }
+        
+        summary:hover {
+            color: var(--white);
+            background: var(--secondary);
+            text-shadow: 2px 2px 0 var(--black);
+        }
+        
+        summary::-webkit-details-marker {
+            display: none;
+        }
+        
+        .payment-info p {
+            padding: 8px;
+            font-size: clamp(0.9rem, 3.5vw, 1.05rem);
+            color: var(--black);
+            opacity: 0;
+            transform: translateY(18px);
+            animation: pixelPopUp 0.5s ease forwards;
+            background: rgba(255, 255, 255, 0.7);
+            border: 2px solid var(--black);
+            margin-top: 8px;
+        }
+        
+        @keyframes pixelPopUp {
+            0% { opacity: 0; transform: translateY(18px) scale(0.95);}
+            70% { opacity: 1; transform: translateY(-4px) scale(1.03);}
+            100% { opacity: 1; transform: translateY(0) scale(1);}
+        }
+        
+        /* Social Media Buttons (on Payment page) */
+        .social {
+            display: flex;
+            justify-content: center;
+            gap: 14px;
+            margin: 16px 0;
+            flex-wrap: wrap;
+        }
+
+        /* Full-screen QR Overlay */
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 120, 200, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.6s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+            z-index: 1000;
+        }
+        
+        .overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .overlay-content {
+            background: var(--white);
+            border: var(--pixel-border);
+            padding: 20px;
+            box-shadow: 8px 8px 0 var(--black);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .overlay img {
+            max-width: 95vw;
+            width: clamp(250px, 80vw, 400px);
+            height: auto;
+            border-radius: 0;
+            border: var(--pixel-border);
+            image-rendering: pixelated;
+            margin-bottom: 20px;
+        }
+
+        /* Download Button Specific Style */
+        .download-btn {
+            margin-top: 10px;
+            background: linear-gradient(90deg, var(--secondary) 0%, var(--accent) 100%);
+        }
+        
+        .download-btn:hover {
+            background: linear-gradient(90deg, var(--primary) 0%, var(--primary-light) 100%);
+        }
+        
+        /* Overlay Animation Keyframes */
+        .overlay.active .overlay-content {
+            animation: pixelZoomIn 0.7s cubic-bezier(0.68, -0.55, 0.27, 1.55) forwards;
+        }
+        
+        .overlay:not(.active) .overlay-content {
+            animation: pixelZoomOut 0.7s cubic-bezier(0.68, -0.55, 0.27, 1.55) forwards;
+        }
+        
+        @keyframes pixelZoomIn {
+            0% { transform: scale(0.5) translateY(80px); opacity: 0; filter: blur(4px);}
+            40% { transform: scale(1.08) translateY(-10px); opacity: 1; filter: blur(0);}
+            100% { transform: scale(1) translateY(0); opacity: 1;}
+        }
+        
+        @keyframes pixelZoomOut {
+            0% { transform: scale(1) translateY(0); opacity: 1;}
+            60% { transform: scale(0.7) translateY(40px);}
+            100% { transform: scale(0.5) translateY(80px); opacity: 0; filter: blur(4px);}
+        }
+        
+        /* Responsive Adjustments */
+        @media (max-width: 900px) {
+            .page {
+                max-width: 98vw;
+                padding: 20px 2vw;
+            }
+            
+            #payment, #confirmPayment, #receipt { /* Include new pages here */
+                max-width: 98vw;
+                padding: 16px 2vw;
+            }
+        }
+        
+        @media (max-width: 600px) {
+            .page {
+                padding: 14px 2vw;
+                max-width: 99vw;
+            }
+            
+            #payment, #confirmPayment, #receipt { /* Include new pages here */
+                padding: 10px 2vw;
+                max-width: 100vw;
+                width: 99vw;
+            }
+        }
+        
+        /* Pixel art decorations for page corners */
+        .pixel-corner {
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            background: var(--black);
+        }
+        
+        .pixel-corner-tl { top: -4px; left: -4px; }
+        .pixel-corner-tr { top: -4px; right: -4px; }
+        .pixel-corner-bl { bottom: -4px; left: -4px; }
+        .pixel-corner-br { bottom: -4px; right: -4px; }
+        
+        /* 8-bit coin animation */
+        .coin {
+            position: absolute;
+            width: 24px;
+            height: 24px;
+            background: var(--accent);
+            border: 3px solid var(--black);
+            border-radius: 50%;
+            animation: coinSpin 2s infinite linear;
+            display: none;
+        }
+        
+        @keyframes coinSpin {
+            0% { transform: rotateY(0); }
+            100% { transform: rotateY(360deg); }
+        }
+
+        /* Social Links Container Styles */
+        .social-links-container {
+            margin-top: 30px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.7);
+            border: var(--pixel-border);
+            box-shadow: 4px 4px 0 var(--black);
+            animation: pixelBounceIn 1.2s 2s forwards;
+        }
+
+        .social-links-container h2 {
+            font-size: clamp(1rem, 4vw, 1.2rem);
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 15px;
+            text-shadow: 2px 2px 0 var(--black);
+        }
+
+        .social-icons {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .social-icons a {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(90deg, var(--accent) 0%, var(--secondary) 100%);
+            color: var(--white);
+            border: var(--pixel-border);
+            border-radius: 0;
+            font-size: 1.8rem;
+            box-shadow: 3px 3px 0 var(--black);
+            transition: all 0.2s ease;
+            text-shadow: 1px 1px 0 var(--black);
+        }
+
+        .social-icons a:hover {
+            transform: translate(2px, 2px);
+            box-shadow: 1px 1px 0 var(--black);
+            background: linear-gradient(90deg, var(--secondary) 0%, var(--accent) 100%);
+        }
+
+        .social-icons a:active {
+            transform: translate(3px, 3px);
+            box-shadow: 0 0 0 var(--black);
+        }
+
+        /* Pixel click effect */
+        .pixel-burst {
+            position: absolute;
+            background-color: var(--accent);
+            width: 8px;
+            height: 8px;
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+            transition: transform 0.3s ease-out, opacity 0.3s ease-out;
+            pointer-events: none;
+            z-index: 1001;
+            border: 1px solid var(--black);
+            box-shadow: 1px 1px 0 rgba(0,0,0,0.3);
+        }
+
+        /* NEW: Confirmation Form Styles */
+        #confirmPayment {
+            max-width: 500px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            border: var(--pixel-border);
+            box-shadow: var(--shadow);
+            margin-top: 20px; /* Adjust spacing */
+        }
+
+        #confirmPayment h2 {
+            font-size: clamp(1rem, 4.5vw, 1.4rem);
+            color: var(--primary);
+            text-shadow: 2px 2px 0 var(--black);
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+            text-align: left;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: clamp(0.8rem, 3vw, 0.95rem);
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: var(--black);
+            text-shadow: 1px 1px 0 rgba(0,0,0,0.1);
+        }
+
+        .form-group input[type="text"],
+        .form-group input[type="file"],
+        .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: var(--pixel-border);
+            background-color: rgba(255, 255, 255, 0.8);
+            font-size: clamp(0.9rem, 3.5vw, 1rem);
+            border-radius: 0;
+            box-shadow: 2px 2px 0 var(--black);
+            outline: none;
+            transition: all 0.1s ease;
+        }
+
+        .form-group input[type="text"]:focus,
+        .form-group select:focus {
+            box-shadow: 3px 3px 0 var(--secondary);
+            border-color: var(--secondary);
+        }
+
+        .form-group input[type="file"] {
+            padding: 8px;
+        }
+
+        .form-group input[type="file"]::file-selector-button {
+            background: var(--primary);
+            color: var(--white);
+            border: var(--pixel-border);
+            border-radius: 0;
+            padding: 6px 12px;
+            cursor: pointer;
+            box-shadow: 2px 2px 0 var(--black);
+            transition: all 0.2s ease;
+            font-size: clamp(0.8rem, 3vw, 0.9rem);
+            font-family: 'Outfit', sans-serif; /* Smoother font for file input button */
+        }
+
+        .form-group input[type="file"]::file-selector-button:hover {
+            background: var(--secondary);
+            transform: translate(1px, 1px);
+            box-shadow: 1px 1px 0 var(--black);
+        }
+
+        #screenshotPreview {
+            max-width: 100%;
+            height: auto;
+            margin-top: 10px;
+            border: 2px dashed var(--secondary);
+            display: block;
+            image-rendering: pixelated;
+        }
+
+        /* Receipt Page Styles */
+        #receipt {
+            max-width: 450px;
+            background: var(--white);
+            padding: 25px;
+            border: var(--pixel-border);
+            box-shadow: var(--shadow);
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.9s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+            z-index: 1;
+        }
+
+        #receipt.active {
+            opacity: 1;
+            visibility: visible;
+            animation: pixelPopIn 0.6s cubic-bezier(0.68, -0.55, 0.27, 1.55) forwards;
+        }
+
+        #receipt h2 {
+            font-size: clamp(1.2rem, 5vw, 1.6rem);
+            color: var(--primary);
+            text-shadow: 3px 3px 0 var(--black);
+            margin-bottom: 20px;
+        }
+
+        .receipt-details {
+            text-align: left;
+            margin-bottom: 25px;
+            background: rgba(100, 220, 255, 0.2);
+            padding: 15px;
+            border: var(--pixel-border);
+            box-shadow: 2px 2px 0 var(--black);
+            font-size: clamp(0.85rem, 3.5vw, 1rem);
+        }
+
+        .receipt-details p {
+            margin-bottom: 8px;
+            color: var(--black);
+        }
+
+        .receipt-details strong {
+            color: var(--secondary);
+        }
+
+        .receipt-footer {
+            margin-top: 20px;
+            font-size: clamp(0.75rem, 3vw, 0.9rem);
+            color: #555;
+        }
+
+        /* Message Box Styling (for alerts) */
+        .message-box {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.8);
+            background: var(--white);
+            border: var(--pixel-border);
+            padding: 25px;
+            box-shadow: 8px 8px 0 var(--black);
+            z-index: 2000;
+            display: none; /* Hidden by default */
+            flex-direction: column;
+            align-items: center;
+            opacity: 0;
+            transition: all 0.3s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+            max-width: 90vw;
+        }
+
+        .message-box.show {
+            display: flex;
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+        }
+
+        .message-box h3 {
+            font-size: clamp(1rem, 4vw, 1.2rem);
+            color: var(--primary);
+            text-shadow: 2px 2px 0 var(--black);
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .message-box p {
+            font-size: clamp(0.85rem, 3.5vw, 1rem);
+            margin-bottom: 20px;
+            text-align: center;
+            color: var(--black);
+        }
+
+        .message-box .btn {
+            padding: 8px 16px;
+            font-size: clamp(0.8rem, 3.5vw, 0.95rem);
+        }
+
+    </style>
+</head>
+<body>
+    <!-- Initial Loading Screen -->
+    <div class="loader" id="loader">
+        <div class="welcome-title">Selamat Datang</div>
+        <div class="spinner"></div>
+        <div class="welcome-text">LOADING...</div>
+    </div>
+
+    <!-- About Page (Initial View) -->
+    <div class="page active" id="about">
+        <!-- Pixelated Corner Decorations -->
+        <div class="pixel-corner pixel-corner-tl"></div>
+        <div class="pixel-corner pixel-corner-tr"></div>
+        <div class="pixel-corner pixel-corner-bl"></div>
+        <div class="pixel-corner pixel-corner-br"></div>
+        
+        <h1>PAYMENT RAPP</h1>
+        <div class="typing-animation">Pembayaran mudah, cepat, dan aman!</div>
+        <p class="subtitle">Harap sertakan bukti transfer</p>
+        <a href="#" class="btn" onclick="showPayment()">Cek Payment</a>
+        
+        <!-- Social Links Section -->
+        <div class="social-links-container">
+            <h2>Kontak Rapp</h2>
+            <div class="social-icons">
+                <!-- WhatsApp Link -->
+                <a href="https://wa.me/6281351257978" target="_blank" aria-label="WhatsApp Rapp">
+                    <i class="fab fa-whatsapp"></i>
+                </a>
+                <!-- Telegram Link (Ganti dengan ID Telegram Anda) -->
+                <a href="https://t.me/Alpha" target="_blank" aria-label="Telegram Rapp">
+                    <i class="fab fa-telegram-plane"></i>
+                </a>
+                <!-- GitHub Link (Ganti dengan Username GitHub Anda) -->
+                <a href="https://github.com/your_github_id" target="_blank" aria-label="GitHub Rapp">
+                    <i class="fab fa-github"></i>
+                </a>
+                <!-- Instagram Link (Ganti dengan Username Instagram Anda) -->
+                <a href="https://instagram.com/your_instagram_id" target="_blank" aria-label="Instagram Rapp">
+                    <i class="fab fa-instagram"></i>
+                </a>
+                <!-- TikTok Link (Ganti dengan Username TikTok Anda) -->
+                <a href="https://tiktok.com/@your_tiktok_id" target="_blank" aria-label="TikTok Rapp">
+                    <i class="fab fa-tiktok"></i>
+                </a>
+            </div>
+        </div>
+
+        <!-- Animated coins for visual flair -->
+        <div class="coin" style="top: 20%; left: 10%;"></div>
+        <div class="coin" style="top: 70%; left: 80%;"></div>
+    </div>
+
+    <!-- Payment Page -->
+    <div class="page hidden" id="payment">
+        <!-- Pixelated Corner Decorations -->
+        <div class="pixel-corner pixel-corner-tl"></div>
+        <div class="pixel-corner pixel-corner-tr"></div>
+        <div class="pixel-corner pixel-corner-bl"></div>
+        <div class="pixel-corner pixel-corner-br"></div>
+        
+        <h1>Payment yang tersedia</h1>
+        <p class="subtitle">Transfer sesuai nominal dan kirim bukti transfer ke WhatsApp</p>
+
+        <!-- QR Code Frame - Clickable to zoom -->
+        <div class="qr-frame" onclick="zoomQR()">
+            <img id="qrisImage" src="https://files.catbox.moe/2wqr9x.jpg" alt="QR Code for Payment">
+        </div>
+
+        <p class="subtitle">SCAN QRIS DI ATAS UNTUK ALL PAY</p>
+
+        <!-- Payment Information Details (Accordion) -->
+        <div class="payment-info">
+            <details>
+                <summary>DANA</summary>
+                <p><strong>082250810012</strong></p>
+            </details>
+            <details>
+                <summary>GOPAY</summary>
+                <p><strong>081351257978</strong></p>
+            </details>
+            <details>
+                <summary>OVO</summary>
+                <p><strong>tidak ada</strong></p>
+            </details>
+            <details>
+                <summary>SeaBank</summary>
+                <p><strong>9016123456789012 (a/n RizalDev)</strong></p>
+            </details>
+            <details>
+                <summary>Mandiri</summary>
+                <p><strong>131-00-1234567-8 (a/n RizalDev)</strong></p>
+            </details>
+            <details>
+                <summary>BCA</summary>
+                <p><strong>0123456789 (a/n RizalDev)</strong></p>
+            </details>
+        </div>
+
+        <!-- NEW: Confirmation Button -->
+        <a href="#" class="btn" onclick="showConfirmPayment()">Konfirmasi Pembayaran</a>
+
+        <!-- WhatsApp Contact (also present on payment page for convenience) -->
+        <div class="social">
+            <a href="https://wa.me/6281351257978" target="_blank" class="btn">WhatsApp RIZALDEV</a>
+        </div>
+
+        <!-- Back Button -->
+        <a href="#" class="btn" onclick="showAbout()">Back</a>
+    </div>
+
+    <!-- NEW: Payment Confirmation Form Page -->
+    <div class="page hidden" id="confirmPayment">
+        <div class="pixel-corner pixel-corner-tl"></div>
+        <div class="pixel-corner pixel-corner-tr"></div>
+        <div class="pixel-corner pixel-corner-bl"></div>
+        <div class="pixel-corner pixel-corner-br"></div>
+
+        <h2>Formulir Konfirmasi Pembayaran</h2>
+        <form id="paymentConfirmForm">
+            <div class="form-group">
+                <label for="fullName">Nama Lengkap:</label>
+                <input type="text" id="fullName" placeholder="Masukkan nama Anda" required>
+            </div>
+
+            <div class="form-group">
+                <label for="paymentMethod">Transfer Via:</label>
+                <select id="paymentMethod" onchange="toggleAccountNumberInput()" required>
+                    <option value="">Pilih Metode Pembayaran</option>
+                    <option value="DANA">DANA</option>
+                    <option value="GOPAY">GOPAY</option>
+                    <option value="OVO">OVO</option>
+                    <option value="SeaBank">SeaBank</option>
+                    <option value="Mandiri">Mandiri</option>
+                    <option value="BCA">BCA</option>
+                    <option value="Lainnya">Lainnya (Tulis Manual)</option>
+                </select>
+            </div>
+
+            <div class="form-group" id="accountNumberGroup">
+                <label for="accountNumber">Nomor E-wallet/Rekening Bank:</label>
+                <input type="text" id="accountNumber" placeholder="Masukkan nomor akun/rekening" required>
+            </div>
+
+            <div class="form-group">
+                <label for="productPurchased">Produk yang Dibeli:</label>
+                <input type="text" id="productPurchased" placeholder="Contoh: Akun Premium, Jasa Desain" required>
+            </div>
+
+            <div class="form-group">
+                <label for="screenshot">Upload Bukti Transfer:</label>
+                <input type="file" id="screenshot" accept="image/*" onchange="previewScreenshot(event)" required>
+                <img id="screenshotPreview" src="" alt="Preview Bukti Transfer" style="display: none;">
+            </div>
+
+            <button type="submit" class="btn">Kirim Konfirmasi</button>
+        </form>
+        <a href="#" class="btn" onclick="showPayment()">Back to Payment Info</a>
+    </div>
+
+    <!-- NEW: Payment Receipt Page -->
+    <div class="page hidden" id="receipt">
+        <div class="pixel-corner pixel-corner-tl"></div>
+        <div class="pixel-corner pixel-corner-tr"></div>
+        <div class="pixel-corner pixel-corner-bl"></div>
+        <div class="pixel-corner pixel-corner-br"></div>
+
+        <h2>Struk Pembayaran</h2>
+        <div class="receipt-details">
+            <p><strong>Tanggal:</strong> <span id="receiptDate"></span></p>
+            <p><strong>Waktu:</strong> <span id="receiptTime"></span></p>
+            <p><strong>Nomor Transaksi:</strong> <span id="transactionId"></span></p>
+            <hr style="border-top: 2px dashed var(--black); margin: 15px 0;">
+            <p><strong>Nama Pembeli:</strong> <span id="receiptName"></span></p>
+            <p><strong>Metode Pembayaran:</strong> <span id="receiptMethod"></span></p>
+            <p><strong>Nomor Akun/Rekening:</strong> <span id="receiptAccount"></span></p>
+            <p><strong>Produk Dibeli:</strong> <span id="receiptProduct"></span></p>
+            <hr style="border-top: 2px dashed var(--black); margin: 15px 0;">
+            <p><strong>Status:</strong> <span style="color: var(--primary); font-weight: bold;">Menunggu Konfirmasi</span></p>
+        </div>
+        <p class="receipt-footer">Terima kasih atas pembayaran Anda. Konfirmasi akan segera diproses.</p>
+        <button class="btn download-btn" onclick="downloadReceipt()">Download Struk</button>
+        <a href="#" class="btn" onclick="showAbout()">Kembali ke Halaman Utama</a>
+    </div>
+
+    <!-- Full-screen QR Zoom Overlay -->
+    <div class="overlay" id="qrOverlay" onclick="closeZoom(event)">
+        <div class="overlay-content">
+            <img id="zoomedQR" src="" alt="QR ALL PAY MAS-AL">
+            <button id="downloadQRBtn" class="btn download-btn">Download QRIS</button>
+        </div>
+    </div>
+
+    <!-- Message Box (Custom Alert) -->
+    <div class="message-box" id="messageBox">
+        <h3 id="messageTitle"></h3>
+        <p id="messageText"></p>
+        <button class="btn" onclick="hideMessageBox()">OK</button>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script>
+        // Custom message box function instead of alert()
+        function showMessageBox(title, message) {
+            document.getElementById('messageTitle').innerText = title;
+            document.getElementById('messageText').innerText = message;
+            document.getElementById('messageBox').classList.add('show');
+        }
+
+        function hideMessageBox() {
+            document.getElementById('messageBox').classList.remove('show');
+        }
+
+        // Executes when the entire page has loaded
+        window.addEventListener('load', () => {
+            const loader = document.getElementById('loader');
+            const about = document.getElementById('about');
+            const coins = document.querySelectorAll('.coin');
+            
+            setTimeout(() => {
+                coins.forEach(coin => {
+                    coin.style.display = 'block';
+                    coin.style.animationDelay = `${Math.random() * 2}s`;
+                });
+            }, 500);
+            
+            setTimeout(() => {
+                loader.classList.add('hidden');
+                setTimeout(() => {
+                    about.classList.add('active');
+                }, 200);
+            }, 1800);
+        });
+
+        // --- Page Navigation Functions ---
+        function hideAllPages() {
+            document.querySelectorAll('.page').forEach(page => {
+                page.classList.remove('active');
+                page.classList.add('hidden');
+            });
+        }
+
+        function showPage(pageId) {
+            hideAllPages();
+            const page = document.getElementById(pageId);
+            setTimeout(() => {
+                page.classList.remove('hidden');
+                page.classList.add('active');
+            }, 700); // Match page transition duration
+        }
+
+        function showPayment() { showPage('payment'); }
+        function showAbout() { showPage('about'); }
+        function showConfirmPayment() { showPage('confirmPayment'); }
+        function showReceipt() { showPage('receipt'); }
+
+        // --- QR Code Zoom Functionality ---
+        function zoomQR() {
+            const qrImage = document.getElementById('qrisImage');
+            const overlay = document.getElementById('qrOverlay');
+            const zoomedQR = document.getElementById('zoomedQR');
+            
+            zoomedQR.src = qrImage.src;
+            overlay.classList.add('active');
+        }
+
+        function closeZoom(event) {
+            const overlayContent = document.querySelector('.overlay-content');
+            if (event.target === event.currentTarget || !overlayContent.contains(event.target)) {
+                document.getElementById('qrOverlay').classList.remove('active');
+            }
+        }
+        
+        // Event listener for the download QRIS button
+        document.getElementById('downloadQRBtn').addEventListener('click', function(event) {
+            event.stopPropagation(); // Prevent closing the overlay
+            const qrImage = document.getElementById('zoomedQR');
+            const imageUrl = qrImage.src;
+            
+            const link = document.createElement('a');
+            link.href = imageUrl;
+            link.download = 'QRIS_Rizaldev_Payment.jpg';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        });
+        
+        // --- Payment Confirmation Form Logic ---
+        function toggleAccountNumberInput() {
+            const paymentMethod = document.getElementById('paymentMethod').value;
+            const accountNumberGroup = document.getElementById('accountNumberGroup');
+            const accountNumberInput = document.getElementById('accountNumber');
+
+            if (paymentMethod === '') {
+                accountNumberInput.setAttribute('placeholder', 'Pilih metode pembayaran terlebih dahulu');
+                accountNumberInput.value = '';
+                accountNumberInput.disabled = true;
+            } else if (['DANA', 'GOPAY', 'OVO'].includes(paymentMethod)) {
+                accountNumberInput.setAttribute('placeholder', 'Masukkan nomor E-wallet Anda');
+                accountNumberInput.value = '';
+                accountNumberInput.disabled = false;
+            } else if (['SeaBank', 'Mandiri', 'BCA', 'Lainnya'].includes(paymentMethod)) {
+                accountNumberInput.setAttribute('placeholder', 'Masukkan nomor rekening bank Anda');
+                accountNumberInput.value = '';
+                accountNumberInput.disabled = false;
+            }
+        }
+
+        // Initial call to set placeholder correctly
+        document.addEventListener('DOMContentLoaded', toggleAccountNumberInput);
+
+        function previewScreenshot(event) {
+            const preview = document.getElementById('screenshotPreview');
+            if (event.target.files.length > 0) {
+                const src = URL.createObjectURL(event.target.files[0]);
+                preview.src = src;
+                preview.style.display = 'block';
+            } else {
+                preview.src = '';
+                preview.style.display = 'none';
+            }
+        }
+
+        document.getElementById('paymentConfirmForm').addEventListener('submit', function(event) {
+            event.preventDefault(); // Prevent default form submission
+
+            const fullName = document.getElementById('fullName').value;
+            const paymentMethod = document.getElementById('paymentMethod').value;
+            const accountNumber = document.getElementById('accountNumber').value;
+            const productPurchased = document.getElementById('productPurchased').value;
+            const screenshotFile = document.getElementById('screenshot').files[0];
+
+            if (!fullName || !paymentMethod || !accountNumber || !productPurchased || !screenshotFile) {
+                showMessageBox('Peringatan!', 'Harap isi semua kolom dan unggah bukti transfer.');
+                return;
+            }
+
+            // --- IMPORTANT: Email Sending Explanation ---
+            // Sending email with attachments directly from client-side JavaScript is not possible
+            // without exposing credentials or requiring the user's email client (e.g., mailto: link, which doesn't support attachments).
+            // For a real-world application, you would send this data to a backend server.
+            // The backend server would then handle the email sending using libraries like Nodemailer (Node.js), SendGrid, etc.
+            // Below is a conceptual example of how you would send data to a backend.
+
+            const formData = new FormData();
+            formData.append('fullName', fullName);
+            formData.append('paymentMethod', paymentMethod);
+            formData.append('accountNumber', accountNumber);
+            formData.append('productPurchased', productPurchased);
+            formData.append('screenshot', screenshotFile);
+
+            // Example of a conceptual fetch request to a backend endpoint:
+            /*
+            fetch('/submit-payment-confirmation', { // This endpoint needs to be created on your server
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showMessageBox('Sukses!', 'Konfirmasi pembayaran berhasil dikirim. Struk akan dibuat.');
+                    generateReceipt(fullName, paymentMethod, accountNumber, productPurchased);
+                } else {
+                    showMessageBox('Error!', 'Gagal mengirim konfirmasi: ' + (data.message || 'Terjadi kesalahan.'));
+                }
+            })
+            .catch(error => {
+                console.error('Error sending confirmation:', error);
+                showMessageBox('Error Koneksi!', 'Tidak dapat menghubungi server. Coba lagi nanti.');
+            });
+            */
+
+            // For this demonstration, we will proceed directly to receipt generation
+            // and simulate a successful submission, as a backend is not available here.
+            showMessageBox('Konfirmasi Terkirim!', 'Konfirmasi pembayaran Anda telah diterima. Struk akan segera dibuat.');
+            generateReceipt(fullName, paymentMethod, accountNumber, productPurchased);
+
+            // Reset form after submission
+            this.reset();
+            document.getElementById('screenshotPreview').style.display = 'none';
+            document.getElementById('screenshotPreview').src = '';
+            toggleAccountNumberInput(); // Reset input field for account number
+        });
+
+        // --- Receipt Generation Logic ---
+        function generateReceipt(name, method, account, product) {
+            const now = new Date();
+            const date = now.toLocaleDateString('id-ID');
+            const time = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            const transactionId = 'TRX' + Date.now().toString().slice(-10) + Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+
+            document.getElementById('receiptDate').innerText = date;
+            document.getElementById('receiptTime').innerText = time;
+            document.getElementById('transactionId').innerText = transactionId;
+            document.getElementById('receiptName').innerText = name;
+            document.getElementById('receiptMethod').innerText = method;
+            document.getElementById('receiptAccount').innerText = account;
+            document.getElementById('receiptProduct').innerText = product;
+
+            showReceipt(); // Show the receipt page
+        }
+
+        function downloadReceipt() {
+            const receiptElement = document.querySelector('#receipt .receipt-details').parentNode; // Target the entire receipt content
+
+            // Use html2canvas to capture the receipt content
+            html2canvas(receiptElement, {
+                scale: 2, // Increase scale for better quality
+                useCORS: true, // If any images are loaded cross-origin
+                logging: false, // Disable logging for cleaner console
+            }).then(canvas => {
+                // Convert canvas to image data URL
+                const imageData = canvas.toDataURL('image/png');
+                
+                // Create a temporary link element
+                const link = document.createElement('a');
+                link.href = imageData;
+                link.download = 'Struk_Pembayaran_Rizaldev.png'; // Suggested filename
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                showMessageBox('Berhasil!', 'Struk pembayaran Anda telah diunduh.');
+            }).catch(error => {
+                console.error('Error generating receipt image:', error);
+                showMessageBox('Gagal!', 'Tidak dapat mengunduh struk. Coba lagi.');
+            });
+        }
+        
+        // Add pixelated click effect
+        document.querySelectorAll('.btn, .qr-frame, details, .social-icons a').forEach(element => {
+            element.addEventListener('click', function(event) {
+                const clickTarget = this;
+                if (clickTarget.tagName === 'DETAILS' && event.target.tagName !== 'SUMMARY') {
+                    return; 
+                }
+                if (clickTarget.tagName === 'INPUT' && clickTarget.type === 'file') {
+                    // Prevent pixel burst on file input clicks as it handles its own UI
+                    return;
+                }
+
+                const pixel = document.createElement('div');
+                pixel.classList.add('pixel-burst');
+                
+                const rect = clickTarget.getBoundingClientRect();
+                const x = event.clientX - rect.left;
+                const y = event.clientY - rect.top;
+                pixel.style.left = `${x}px`;
+                pixel.style.top = `${y}px`;
+                
+                clickTarget.appendChild(pixel);
+
+                setTimeout(() => {
+                    pixel.style.transform = `translate(${x}px, ${y}px) scale(3)`;
+                    pixel.style.opacity = '0';
+                }, 10);
+
+                pixel.addEventListener('transitionend', () => {
+                    pixel.remove();
+                });
+            });
+        });
+    </script>
+</body>
+</html>
